@@ -1,0 +1,416 @@
+Main
+Display.InputDialog Title: $'''Path to Import''' Message: $'''Input the folder path from where all company data is picked''' InputType: Display.InputType.SingleLine IsTopMost: True UserInput=> DataImportPath ButtonPressed=> ButtonPressed
+IF ButtonPressed = $'''Cancel''' THEN
+    Display.ShowMessageDialog.ShowMessageWithTimeout Title: $'''Flow Stopped''' Message: $'''You stopped the flow!''' Icon: Display.Icon.None Buttons: Display.Buttons.OK DefaultButton: Display.DefaultButton.Button1 IsTopMost: True Timeout: 3
+    EXIT Code: 0
+END
+Display.InputDialog Title: $'''Path to Export''' Message: $'''Input the folder path where all reports will be saved ''' InputType: Display.InputType.SingleLine IsTopMost: True UserInput=> DataExportPath ButtonPressed=> ButtonPressed
+IF ButtonPressed = $'''Cancel''' THEN
+    Display.ShowMessageDialog.ShowMessageWithTimeout Title: $'''Flow Stopped''' Message: $'''You stopped the flow!''' Icon: Display.Icon.None Buttons: Display.Buttons.OK DefaultButton: Display.DefaultButton.Button1 IsTopMost: True Timeout: 3
+    EXIT Code: 0
+END
+Display.SelectDateDialog.SelectDate Title: $'''Start Date''' Message: $'''Choose your start date for balance sheet (day not taken into consideration)''' DateDialogFormat: Display.DateDialogFormat.DateOnly IsTopMost: False SelectedDate=> Start_Full_Date ButtonPressed=> ButtonPressed
+IF ButtonPressed = $'''Cancel''' THEN
+    Display.ShowMessageDialog.ShowMessageWithTimeout Title: $'''Flow Stopped''' Message: $'''You stopped the flow!''' Icon: Display.Icon.None Buttons: Display.Buttons.OK DefaultButton: Display.DefaultButton.Button1 IsTopMost: True Timeout: 3
+    EXIT Code: 0
+END
+Display.SelectDateDialog.SelectDate Title: $'''End Date''' Message: $'''Choose your end date for balance sheet (day not taken into consideration)''' DateDialogFormat: Display.DateDialogFormat.DateOnly IsTopMost: False SelectedDate=> End_Full_Date ButtonPressed=> ButtonPressed
+IF ButtonPressed = $'''Cancel''' THEN
+    Display.ShowMessageDialog.ShowMessageWithTimeout Title: $'''Flow Stopped''' Message: $'''You stopped the flow!''' Icon: Display.Icon.None Buttons: Display.Buttons.OK DefaultButton: Display.DefaultButton.Button1 IsTopMost: True Timeout: 3
+    EXIT Code: 0
+END
+IF Start_Full_Date > End_Full_Date THEN
+    Display.ShowMessageDialog.ShowMessageWithTimeout Title: $'''Incorrect Date''' Message: $'''Start date is greater than end date. This is not possible.''' Icon: Display.Icon.None Buttons: Display.Buttons.OK DefaultButton: Display.DefaultButton.Button1 IsTopMost: True Timeout: 3
+    EXIT Code: 0
+END
+System.RunApplication.RunApplicationAndWaitToLoad ApplicationPath: $'''C:\\Program Files\\TallyPrime\\tally.exe''' WorkingDirectory: $'''C:\\Program Files\\TallyPrime\\tally.exe''' WindowStyle: System.ProcessWindowStyle.Normal Timeout: 20 ProcessId=> Tally
+DISABLE MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''T''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+Text.GetSubtext.GetSubtext Text: Start_Full_Date CharacterPosition: 3 NumberOfChars: 2 Subtext=> Start_Month
+Text.GetSubtext.GetSubtext Text: Start_Full_Date CharacterPosition: 6 NumberOfChars: 4 Subtext=> Start_Year
+Text.GetSubtext.GetSubtext Text: End_Full_Date CharacterPosition: 3 NumberOfChars: 2 Subtext=> End_Month
+Text.GetSubtext.GetSubtext Text: End_Full_Date CharacterPosition: 6 NumberOfChars: 4 Subtext=> End_Year
+DISABLE WAIT 5
+Variables.CreateNewList List=> MonthMap
+Variables.AddItemToList Item: $'''jan''' List: MonthMap
+Variables.AddItemToList Item: $'''feb''' List: MonthMap
+Variables.AddItemToList Item: $'''mar''' List: MonthMap
+Variables.AddItemToList Item: $'''apr''' List: MonthMap
+Variables.AddItemToList Item: $'''may''' List: MonthMap
+Variables.AddItemToList Item: $'''jun''' List: MonthMap
+Variables.AddItemToList Item: $'''jul''' List: MonthMap
+Variables.AddItemToList Item: $'''aug''' List: MonthMap
+Variables.AddItemToList Item: $'''sep''' List: MonthMap
+Variables.AddItemToList Item: $'''oct''' List: MonthMap
+Variables.AddItemToList Item: $'''nov''' List: MonthMap
+Variables.AddItemToList Item: $'''dec''' List: MonthMap
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''spec {Enter}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: DataImportPath DelayBetweenKeystrokes: 30 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+DISABLE MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''jigar{Return}jigar{Return}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+WAIT 2
+CALL 'Balance Sheet'
+ 
+Balance Sheet
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''b''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+SET Current_Year TO Start_Year
+SET Current_Month TO Start_Month
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F2}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+LOOP WHILE (Current_Year) < (End_Year)
+    MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({C})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+    LOOP WHILE (Current_Month) < (13)
+        MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({C})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+        SET MonthAbbrev TO MonthMap[Current_Month - 1]
+        MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%MonthAbbrev%-%Current_Year% {Return}%MonthAbbrev%-%Current_Year%{Control}({A})''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+        SET Current_Month TO Current_Month + 1
+    END
+    SET Current_Month TO 1
+    SET Current_Year TO Current_Year + 1
+END
+LOOP WHILE (Current_Month) <= (End_Month)
+    MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({C})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+    SET MonthAbbrev TO MonthMap[Current_Month - 1]
+    MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%MonthAbbrev%-%Current_Year% {Return}%MonthAbbrev%-%Current_Year%{Control}({A})''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+    SET Current_Month TO Current_Month + 1
+END
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({F1})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Control}({E})''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''C''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''File Name {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+Text.GetSubtext.GetSubtext Text: Start_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> Start_Year_Trimmed
+Text.GetSubtext.GetSubtext Text: End_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> End_Year_Trimed
+SET FileName TO $'''BS%Start_Year_Trimmed%%End_Year_Trimed%'''
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%FileName% {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}{Escape}''' DelayBetweenKeystrokes: 70 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F8}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''Ex {Return}''' DelayBetweenKeystrokes: 240 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F6}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Up}{Up}{Return}''' DelayBetweenKeystrokes: 30 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: DataExportPath DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Return}{Return}{Return}''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''e''' DelayBetweenKeystrokes: 300 SendTextAsHardwareKeys: True
+WAIT (UIAutomation.WaitForWindow.ToOpenByTitleClass Title: $'''%FileName% - Excel''' Class: $'''''' FocusWindow: True)
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}{F4}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}''' DelayBetweenKeystrokes: 60 SendTextAsHardwareKeys: True
+WAIT 5
+CALL 'Profit Loss'
+ 
+Profit Loss
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''p''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+SET Current_Year TO Start_Year
+SET Current_Month TO Start_Month
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F2}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+LOOP WHILE (Current_Year) < (End_Year)
+    MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({C})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+    LOOP WHILE (Current_Month) < (13)
+        MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({C})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+        SET MonthAbbrev TO MonthMap[Current_Month - 1]
+        MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%MonthAbbrev%-%Current_Year% {Return}%MonthAbbrev%-%Current_Year%{Control}({A})''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+        SET Current_Month TO Current_Month + 1
+    END
+    SET Current_Month TO 1
+    SET Current_Year TO Current_Year + 1
+END
+LOOP WHILE (Current_Month) <= (End_Month)
+    MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({C})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+    SET MonthAbbrev TO MonthMap[Current_Month - 1]
+    MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%MonthAbbrev%-%Current_Year% {Return}%MonthAbbrev%-%Current_Year%{Control}({A})''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+    SET Current_Month TO Current_Month + 1
+END
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({F1})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Control}({E})''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''C''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''File Name {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+Text.GetSubtext.GetSubtext Text: Start_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> Start_Year_Trimmed
+Text.GetSubtext.GetSubtext Text: End_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> End_Year_Trimed
+SET FileName TO $'''PL%Start_Year_Trimmed%%End_Year_Trimed%'''
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%FileName% {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}{Escape}''' DelayBetweenKeystrokes: 70 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F8}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''Ex {Return}''' DelayBetweenKeystrokes: 240 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F6}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Up}{Up}{Return}''' DelayBetweenKeystrokes: 30 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: DataExportPath DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Return}{Return}{Return}''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''e''' DelayBetweenKeystrokes: 300 SendTextAsHardwareKeys: True
+WAIT (UIAutomation.WaitForWindow.ToOpenByTitleClass Title: $'''%FileName% - Excel''' Class: $'''''' FocusWindow: True)
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}{F4}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}''' DelayBetweenKeystrokes: 60 SendTextAsHardwareKeys: True
+WAIT 2
+CALL 'Sundry Creditors' 
+ 
+Sundry Creditors
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''b''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Control}({F})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''Current Liabilities{Enter}{Enter}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Control}({F})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''Sundry Creditors{Enter}{Enter}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F12}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''y{Enter}y{Enter}{Control}({A})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+SET Current_Year TO Start_Year
+SET Current_Month TO Start_Month
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F2}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+LOOP WHILE (Current_Year) < (End_Year)
+    MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({C})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+    LOOP WHILE (Current_Month) < (13)
+        MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({C})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+        SET MonthAbbrev TO MonthMap[Current_Month - 1]
+        MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%MonthAbbrev%-%Current_Year% {Return}%MonthAbbrev%-%Current_Year%{Control}({A})''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+        SET Current_Month TO Current_Month + 1
+    END
+    SET Current_Month TO 1
+    SET Current_Year TO Current_Year + 1
+END
+LOOP WHILE (Current_Month) <= (End_Month)
+    MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({C})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+    SET MonthAbbrev TO MonthMap[Current_Month - 1]
+    MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%MonthAbbrev%-%Current_Year% {Return}%MonthAbbrev%-%Current_Year%{Control}({A})''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+    SET Current_Month TO Current_Month + 1
+END
+LABEL Loop_Ended
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({F1})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Control}({E})''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''C''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''File Name {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+Text.GetSubtext.GetSubtext Text: Start_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> Start_Year_Trimmed
+Text.GetSubtext.GetSubtext Text: End_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> End_Year_Trimed
+SET FileName TO $'''CA%Start_Year_Trimmed%%End_Year_Trimed%'''
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%FileName% {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}{Escape}''' DelayBetweenKeystrokes: 70 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F8}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''Ex {Return}''' DelayBetweenKeystrokes: 240 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F6}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Up}{Up}{Return}''' DelayBetweenKeystrokes: 30 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: DataExportPath DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Return}{Return}{Return}''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''e''' DelayBetweenKeystrokes: 300 SendTextAsHardwareKeys: True
+WAIT (UIAutomation.WaitForWindow.ToOpenByTitleClass Title: $'''%FileName% - Excel''' Class: $'''''' FocusWindow: True)
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}{F4}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}{Escape}{Escape}{Escape}{Escape}''' DelayBetweenKeystrokes: 60 SendTextAsHardwareKeys: True
+WAIT 5
+CALL 'Sundry Debtors'
+ 
+Sundry Debtors
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''b''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Control}({F})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''Current Assets{Enter}{Enter}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Control}({F})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''Sundry Debtors{Enter}{Enter}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F12}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''y{Enter}y{Enter}{Control}({A})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+SET Current_Year TO Start_Year
+SET Current_Month TO Start_Month
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F2}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+LOOP WHILE (Current_Year) < (End_Year)
+    MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({C})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+    LOOP WHILE (Current_Month) < (13)
+        MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({C})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+        SET MonthAbbrev TO MonthMap[Current_Month - 1]
+        MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%MonthAbbrev%-%Current_Year% {Return}%MonthAbbrev%-%Current_Year%{Control}({A})''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+        SET Current_Month TO Current_Month + 1
+    END
+    SET Current_Month TO 1
+    SET Current_Year TO Current_Year + 1
+END
+LOOP WHILE (Current_Month) <= (End_Month)
+    MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({C})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+    SET MonthAbbrev TO MonthMap[Current_Month - 1]
+    MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%MonthAbbrev%-%Current_Year% {Return}%MonthAbbrev%-%Current_Year%{Control}({A})''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+    SET Current_Month TO Current_Month + 1
+END
+LABEL Loop_Ended
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({F1})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Control}({E})''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''C''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''File Name {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+Text.GetSubtext.GetSubtext Text: Start_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> Start_Year_Trimmed
+Text.GetSubtext.GetSubtext Text: End_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> End_Year_Trimed
+SET FileName TO $'''DA%Start_Year_Trimmed%%End_Year_Trimed%'''
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%FileName% {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}{Escape}''' DelayBetweenKeystrokes: 70 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F8}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''Ex {Return}''' DelayBetweenKeystrokes: 240 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F6}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Up}{Up}{Return}''' DelayBetweenKeystrokes: 30 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: DataExportPath DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Return}{Return}{Return}''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''e''' DelayBetweenKeystrokes: 300 SendTextAsHardwareKeys: True
+WAIT (UIAutomation.WaitForWindow.ToOpenByTitleClass Title: $'''%FileName% - Excel''' Class: $'''''' FocusWindow: True)
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}{F4}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}{Escape}{Escape}{Escape}{Escape}''' DelayBetweenKeystrokes: 60 SendTextAsHardwareKeys: True
+WAIT 5
+CALL 'Day Book' 
+ 
+Day Book
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''d''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''d''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({F1})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({F2})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+SET StartMonthAbbrev TO MonthMap[Start_Month - 1]
+SET EndMonthAbbrev TO MonthMap[End_Month - 1]
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%StartMonthAbbrev%-%Start_Year% {Enter} %EndMonthAbbrev%-%End_Year% {Control}({A})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Control}({E})''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''C''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''File Name {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+Text.GetSubtext.GetSubtext Text: Start_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> Start_Year_Trimmed
+Text.GetSubtext.GetSubtext Text: End_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> End_Year_Trimed
+SET FileName TO $'''DayBook%Start_Year_Trimmed%%End_Year_Trimed%'''
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%FileName% {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}{Escape}''' DelayBetweenKeystrokes: 70 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F8}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''Ex {Return}''' DelayBetweenKeystrokes: 240 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F6}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Up}{Up}{Return}''' DelayBetweenKeystrokes: 30 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: DataExportPath DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Return}{Return}{Return}''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''e''' DelayBetweenKeystrokes: 300 SendTextAsHardwareKeys: True
+WAIT (UIAutomation.WaitForWindow.ToOpenByTitleClass Title: $'''%FileName% - Excel''' Class: $'''''' FocusWindow: True)
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}{F4}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}{Escape}''' DelayBetweenKeystrokes: 60 SendTextAsHardwareKeys: True
+WAIT 5
+CALL 'Cash Flow' 
+ 
+Cash Flow
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''d''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''c{Enter}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({F1})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+SET Current_Year TO Start_Year
+SET Current_Month TO Start_Month
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({F2})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+LOOP WHILE (Current_Year) < (End_Year)
+    MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({C})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+    LOOP WHILE (Current_Month) < (13)
+        MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({C})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+        SET MonthAbbrev TO MonthMap[Current_Month - 1]
+        MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%MonthAbbrev%-%Current_Year% {Return}%MonthAbbrev%-%Current_Year%{Control}({A})''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+        SET Current_Month TO Current_Month + 1
+    END
+    SET Current_Month TO 1
+    SET Current_Year TO Current_Year + 1
+END
+LOOP WHILE (Current_Month) <= (End_Month)
+    MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({C})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+    SET MonthAbbrev TO MonthMap[Current_Month - 1]
+    MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%MonthAbbrev%-%Current_Year% {Return}%MonthAbbrev%-%Current_Year%{Control}({A})''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+    SET Current_Month TO Current_Month + 1
+END
+LABEL Loop_Ended
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Control}({E})''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''C''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''File Name {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+Text.GetSubtext.GetSubtext Text: Start_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> Start_Year_Trimmed
+Text.GetSubtext.GetSubtext Text: End_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> End_Year_Trimed
+SET FileName TO $'''CF%Start_Year_Trimmed%%End_Year_Trimed%'''
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%FileName% {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}{Escape}''' DelayBetweenKeystrokes: 70 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F8}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''Ex {Return}''' DelayBetweenKeystrokes: 240 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F6}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Up}{Up}{Return}''' DelayBetweenKeystrokes: 30 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: DataExportPath DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Return}{Return}{Return}''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''e''' DelayBetweenKeystrokes: 300 SendTextAsHardwareKeys: True
+WAIT (UIAutomation.WaitForWindow.ToOpenByTitleClass Title: $'''%FileName% - Excel''' Class: $'''''' FocusWindow: True)
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}{F4}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}{Escape}{Escape}''' DelayBetweenKeystrokes: 60 SendTextAsHardwareKeys: True
+WAIT 5
+CALL 'Sales Report' 
+ 
+Sales Report
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''d''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''a''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''s{Enter}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({F2})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+SET StartMonthAbbrev TO MonthMap[Start_Month - 1]
+SET EndMonthAbbrev TO MonthMap[End_Month - 1]
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%StartMonthAbbrev%-%Start_Year% {Enter} %EndMonthAbbrev%-%End_Year% {Control}({A})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({F1})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F8}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Control}({A})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Control}({E})''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''C''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''File Name {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+Text.GetSubtext.GetSubtext Text: Start_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> Start_Year_Trimmed
+Text.GetSubtext.GetSubtext Text: End_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> End_Year_Trimed
+SET FileName TO $'''SA%Start_Year_Trimmed%%End_Year_Trimed%'''
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%FileName% {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}{Escape}''' DelayBetweenKeystrokes: 70 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F8}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''Ex {Return}''' DelayBetweenKeystrokes: 240 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F6}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Up}{Up}{Return}''' DelayBetweenKeystrokes: 30 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: DataExportPath DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Return}{Return}{Return}''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''e''' DelayBetweenKeystrokes: 300 SendTextAsHardwareKeys: True
+WAIT (UIAutomation.WaitForWindow.ToOpenByTitleClass Title: $'''%FileName% - Excel''' Class: $'''''' FocusWindow: True)
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}{F4}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}{Escape}{Escape}{Escape}''' DelayBetweenKeystrokes: 60 SendTextAsHardwareKeys: True
+WAIT 5
+CALL 'Purchase Report' 
+ 
+Purchase Report
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''d''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''a''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''p{Enter}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({F1})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({F2})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+SET StartMonthAbbrev TO MonthMap[Start_Month - 1]
+SET EndMonthAbbrev TO MonthMap[End_Month - 1]
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%StartMonthAbbrev%-%Start_Year% {Enter} %EndMonthAbbrev%-%End_Year% {Control}({A})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F8}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Control}({A})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Control}({E})''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''C''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''File Name {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+Text.GetSubtext.GetSubtext Text: Start_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> Start_Year_Trimmed
+Text.GetSubtext.GetSubtext Text: End_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> End_Year_Trimed
+SET FileName TO $'''PA%Start_Year_Trimmed%%End_Year_Trimed%'''
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%FileName% {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}{Escape}''' DelayBetweenKeystrokes: 70 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F8}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''Ex {Return}''' DelayBetweenKeystrokes: 240 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F6}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Up}{Up}{Return}''' DelayBetweenKeystrokes: 30 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: DataExportPath DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Return}{Return}{Return}''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''e''' DelayBetweenKeystrokes: 300 SendTextAsHardwareKeys: True
+WAIT (UIAutomation.WaitForWindow.ToOpenByTitleClass Title: $'''%FileName% - Excel''' Class: $'''''' FocusWindow: True)
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}{F4}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}{Escape}{Escape}{Escape}''' DelayBetweenKeystrokes: 60 SendTextAsHardwareKeys: True
+CALL Aging
+ 
+Aging (Bills Recievable) Report
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''d''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''s''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''o''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''r''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}({F2})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+SET StartMonthAbbrev TO MonthMap[Start_Month - 1]
+SET EndMonthAbbrev TO MonthMap[End_Month - 1]
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%StartMonthAbbrev%-%Start_Year% {Enter} %EndMonthAbbrev%-%End_Year% {Control}({A})''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F6}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''Ageing by Due Date{Enter}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''30{Enter}60{Enter}120{Enter}180{Enter}{Enter}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+WAIT 1
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''y''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Control}({E})''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''C''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''File Name {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+Text.GetSubtext.GetSubtext Text: Start_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> Start_Year_Trimmed
+Text.GetSubtext.GetSubtext Text: End_Year CharacterPosition: 2 NumberOfChars: 2 Subtext=> End_Year_Trimed
+SET FileName TO $'''Aging%Start_Year%%End_Year_Trimed%'''
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''%FileName% {Return}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}{Escape}''' DelayBetweenKeystrokes: 70 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F8}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''Ex {Return}''' DelayBetweenKeystrokes: 240 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{F6}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Up}{Up}{Return}''' DelayBetweenKeystrokes: 30 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: DataExportPath DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Return}{Return}{Return}{Return}''' DelayBetweenKeystrokes: 100 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''e''' DelayBetweenKeystrokes: 300 SendTextAsHardwareKeys: True
+WAIT (UIAutomation.WaitForWindow.ToOpenByTitleClass Title: $'''%FileName% - Excel''' Class: $'''''' FocusWindow: True)
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}{F4}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Escape}{Escape}{Escape}{Escape}''' DelayBetweenKeystrokes: 60 SendTextAsHardwareKeys: True
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''{Alt}{F4}''' DelayBetweenKeystrokes: 50 SendTextAsHardwareKeys: True
+WAIT 1
+MouseAndKeyboard.SendKeys.FocusAndSendKeys TextToSend: $'''y''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+Display.ShowMessageDialog.ShowMessageWithTimeout Title: $'''Flow Completed''' Message: $'''The flow has been completed and the required files have been downloaded''' Icon: Display.Icon.None Buttons: Display.Buttons.OK DefaultButton: Display.DefaultButton.Button1 IsTopMost: False Timeout: 3
